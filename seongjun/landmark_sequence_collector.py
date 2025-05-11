@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque # deque 자료구조를 불러옴
 
 SEQ_LENGTH = 30
 sequence = deque(maxlen=SEQ_LENGTH)
