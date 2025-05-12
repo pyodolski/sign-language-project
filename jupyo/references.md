@@ -1,4 +1,4 @@
 https://w-storage.tistory.com/39
 
-데이터셋
-https://www.kaggle.com/datasets/ayuraj/asl-dataset/data
+데이터셋<br>
+https://www.kaggle.com/datasets/waseemnagahhenes/sign-language-dataset-wlasl-videos
