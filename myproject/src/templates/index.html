@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>수어 인식 모드 선택</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f3f4f6;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    .container {
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    .title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 1.5rem;
+    }
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.75rem;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .ksl {
+      background-color: #3b82f6;
+    }
+    .ksl:hover {
+      background-color: #2563eb;
+    }
+    .asl {
+      background-color: #10b981;
+    }
+    .asl:hover {
+      background-color: #059669;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">수어 인식 모드 선택</div>
+    <div class="subtitle">사용할 수어 모드를 선택하세요</div>
+    <div class="button-group">
+      <button class="button ksl" onclick="location.href='/ksl'">KSL (한국 수어)</button>
+      <button class="button asl" onclick="location.href='/asl'">ASL (미국 수어)</button>
+    </div>
+  </div>
+</body>
+</html>

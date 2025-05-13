@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KSL 수어 인식</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f4f8;
+      margin: 0;
+      font-family: sans-serif;
+    }
+    .container {
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      position: relative;
+    }
+    .title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+    .button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 0.75rem;
+      background-color: #3b82f6;
+      color: white;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .button:hover {
+      background-color: #2563eb;
+    }
+    .home-button {
+      position: absolute;
+      top: -2.5rem;
+      right: 0;
+      font-size: 0.9rem;
+      text-decoration: none;
+      color: #3b82f6;
+      font-weight: bold;
+      background-color: white;
+      border: 2px solid #3b82f6;
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.5rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .home-button:hover {
+      background-color: #3b82f6;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="home-button">← 홈으로</a>
+    <div class="title">KSL 수어 인식</div>
+    <p>웹캠을 통해 수어를 인식합니다.</p>
+    <button class="button" onclick="startRecognition()">웹캠 인식 시작</button>
+  </div>
+
+  <script>
+    function startRecognition() {
+      alert("웹캠 인식 기능은 아직 구현되지 않았습니다.");
+    }
+  </script>
+</body>
+</html>
