@@ -37,7 +37,7 @@ for file in os.listdir(data_directory):
                 X.extend(df.iloc[:, :-1].values.tolist())
                 y.extend(df.iloc[:, -1].values.tolist())
                 # 라벨이 제대로 읽혔는지 샘플 출력 (디버깅용)
-                # print(f"  Labels sample from {file}: {df.iloc[:3, -1].unique()}")
+                print(f"  Labels sample from {file}: {df.iloc[:3, -1].unique()}")
             else:
                 print(
                     f"  Warning: File {file} has only one column. Skipping this file as it cannot be split into data and label.")
@@ -108,7 +108,7 @@ else:
 # 모델과 라벨 저장
 output_model_dir = "model"
 os.makedirs(output_model_dir, exist_ok=True)
-model.save(os.path.join(output_model_dir, "ksl_model.h5"))
+model.save(os.path.join(output_model_dir, "asl_model.h5"))
 np.save(os.path.join(output_model_dir, "labels.npy"), labels_original_order)  # le.classes_ (원본 라벨) 저장
 
 print(f"\n모델과 라벨이 '{output_model_dir}' 디렉토리에 저장되었습니다.")
