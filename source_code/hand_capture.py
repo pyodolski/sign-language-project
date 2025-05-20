@@ -15,7 +15,7 @@ mp_draw = mp.solutions.drawing_utils
 
 cap = cv2.VideoCapture(0)
 
-with open(csv_file, 'a', newline='') as f:
+with open(csv_file, 'a', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
 
     print("스페이스바 누를 때마다 데이터 저장됩니다. ESC로 종료.")
