@@ -4,9 +4,7 @@ import mediapipe as mp
 import numpy as np
 from tensorflow.keras.models import load_model
 import os
-import googletrans
-
-translator = googletrans.Translator()
+from deep_translator import GoogleTranslator
 
 app = Flask(__name__)
 
@@ -107,6 +105,13 @@ def add_char():
         recognized_string += latest_char
     return jsonify({'success': True})
 
+@app.route('/remove_char')
+def remove_char():
+    global recognized_string
+    if recognized_string:
+        recognized_string = recognized_string[:-1]
+    return jsonify({'success': True})
+
 @app.route('/clear_string')
 def clear_string():
     global recognized_string
@@ -116,21 +121,19 @@ def clear_string():
 @app.route('/translate')
 def translate():
     global recognized_string
-    original = recognized_string
+    original = recognized_string.strip() or "Hello"
 
-    en = translator.translate(original, src='en', dest='en').text
-    ko = translator.translate(original, src='en', dest='ko').text
-    zh = translator.translate(original, src='en', dest='zh-cn').text
-    ja = translator.translate(original, src='en', dest='ja').text
+    try:
+        # deep-translator 사용 (동기 처리)
+        en = GoogleTranslator(source='auto', target='en').translate(original)
+        ko = GoogleTranslator(source='auto', target='ko').translate(original)
+        zh = GoogleTranslator(source='auto', target='zh-CN').translate(original)
+        ja = GoogleTranslator(source='auto', target='ja').translate(original)
+    except Exception as e:
+        print("❌ 번역 실패:", e)
+        en = ko = zh = ja = "(번역 오류)"
 
     return render_template('translate.html', ko=ko, en=en, zh=zh, ja=ja)
-
-@app.route('/remove_char')
-def remove_char():
-    global recognized_string
-    if recognized_string:
-        recognized_string = recognized_string[:-1]
-    return jsonify({'success': True})
 
 # ==== 실행 ====
 if __name__ == '__main__':
