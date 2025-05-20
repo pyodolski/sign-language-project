@@ -102,6 +102,7 @@
       </div>
       <div class="output-line">
         <button onclick="addChar()">현재 글자 추가</button>
+        <button onclick="removeChar()">최근 글자 삭제</button>
         <button onclick="clearString()">문자열 초기화</button>
         <button onclick="translateText()">🌐 번역하기</button>
       </div>
@@ -155,6 +156,10 @@
 
     function addChar() {
       fetch('/add_char').then(update);
+    }
+
+    function removeChar() {
+      fetch('/remove_char').then(update);
     }
 
     function clearString() {

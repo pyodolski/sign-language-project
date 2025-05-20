@@ -125,6 +125,13 @@ def translate():
 
     return render_template('translate.html', ko=ko, en=en, zh=zh, ja=ja)
 
+@app.route('/remove_char')
+def remove_char():
+    global recognized_string
+    if recognized_string:
+        recognized_string = recognized_string[:-1]
+    return jsonify({'success': True})
+
 # ==== 실행 ====
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5002)
