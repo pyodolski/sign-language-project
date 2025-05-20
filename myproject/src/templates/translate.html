@@ -1,0 +1,120 @@
+<!-- templates/translate.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>문자열 번역 결과</title>
+  <style>
+    body {
+      background-color: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 700px;
+      width: 100%;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .lang {
+      margin: 1rem 0;
+      font-size: 1.1rem;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+
+    .tts-button {
+      margin-left: 0.5rem;
+      background-color: #10b981;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      padding: 0.3rem 0.8rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .tts-button:hover {
+      background-color: #059669;
+    }
+
+    button.back {
+      margin-top: 1.5rem;
+      background-color: #3b82f6;
+      padding: 0.6rem 1.2rem;
+    }
+
+    button.back:hover {
+      background-color: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>번역 결과</h2>
+
+    <div class="lang">
+      <span class="label">한국어:</span>
+      <span id="ko">{{ ko }}</span>
+      <button class="tts-button" onclick="speak('ko')">▶</button>
+    </div>
+
+    <div class="lang">
+      <span class="label">영어:</span>
+      <span id="en">{{ en }}</span>
+      <button class="tts-button" onclick="speak('en')">▶</button>
+    </div>
+
+    <div class="lang">
+      <span class="label">중국어:</span>
+      <span id="zh">{{ zh }}</span>
+      <button class="tts-button" onclick="speak('zh')">▶</button>
+    </div>
+
+    <div class="lang">
+      <span class="label">일본어:</span>
+      <span id="ja">{{ ja }}</span>
+      <button class="tts-button" onclick="speak('ja')">▶</button>
+    </div>
+
+    <button class="back" onclick="location.href='/asl'">← 돌아가기</button>
+  </div>
+
+  <script>
+    function speak(langCode) {
+      const text = document.getElementById(langCode).innerText;
+      const utter = new SpeechSynthesisUtterance(text);
+
+      // 언어 코드에 맞춰 음성 설정
+      const langMap = {
+        ko: "ko-KR",
+        en: "en-US",
+        zh: "zh-CN",
+        ja: "ja-JP"
+      };
+
+      utter.lang = langMap[langCode];
+      speechSynthesis.speak(utter);
+    }
+  </script>
+</body>
+</html>

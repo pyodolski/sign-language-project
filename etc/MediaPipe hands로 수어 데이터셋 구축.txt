@@ -1,0 +1,45 @@
+MediaPipe hands로 수어 데이터셋 구축
+* 손 랜드마크(21개 점) 추출
+* 특징 벡터 계산
+# 벡터 간 각도 계산 예시[2]
+compareV1 = landmarks[[0,1,2,4,5,6,8,9,10,12,13,14,16,17,18]]
+compareV2 = landmarks[[1,2,3,5,6,7,9,10,11,13,14,15,17,18,19]]
+angles = np.degrees(np.arccos(np.einsum('nt,nt->n', compareV1, compareV2)))
+
+데이터 구조 - 수어 동작별 500~1000개 샘플 수집
+CSV/TXT 형식으로 저장 [angle1, angle2,..., label]
+or 데이터 증강 (회전 +-5도, 이동 +-5px, 크기 조정 +-0.3배), AI Hub 데이터셋(53.6만 영상) 활용
+
+* 라벨링
+키보드 트리거로 데이터 저장
+if keyboard.is_pressed('a'):
+    f.write(f"{angles},{label}\n")
+
+정적 수어 인식시 KNN 알고리즘(97.9% 정확도) 참고됨
+KNN 알골리즘 - 새로운 데이터가 들어왔을 때, 그 데이터와 가장 가까운 K개의 이웃 데이터를 찾아, 다수결로 분류를 결정하는 머신러닝 분류 알고리즘. 기존 데이터 중에서 가장 비슷한 K 개의 데이터를 찾고, 그 중 가장 많은 라벨로 분류. 거리(유사도)를 기준으로 동작->직관적, 간단함. 데이터가 많아질수록 계산량이 늘어남
+import numpy as np
+from sklearn.neighbors import KNeighborsClassifier
+
+# 학습 데이터 (각도 벡터)와 라벨
+X_train = np.array([
+    [10, 20, 30, ..., 150],   # 제스처 A
+    [200, 210, 220, ..., 340],# 제스처 B
+    [400, 410, 420, ..., 540] # 제스처 C
+    # ... (각 제스처별 여러 샘플)
+])
+Y_train = np.array([0, 1, 2]) # 0:A, 1:B, 2:C
+
+# KNN 분류기 생성 및 학습
+knn = KNeighborsClassifier(n_neighbors=3)
+knn.fit(X_train, Y_train)
+
+# 예측할 데이터 (새로운 손 모양 각도)
+X_test = np.array([[10, 20, 30, ..., 150]])
+predicted = knn.predict(X_test)
+
+print(predicted)  # 예측된 제스처 라벨 출력
+
+실행 결과, 예시 입력에 대해 0(제스처 A)로 분류됩니다.
+실제 사용시에는 각도 벡터와 라벨을 본인 데이터셋에 맞게 넣어주면 됩니다.
+
+동적 제스처 인식에는 LSTM/CNN 겹합 모델 필요

@@ -13,7 +13,9 @@ X, y = [], []
 # 모든 CSV 파일 읽어서 데이터로 변환
 # data 디렉토리가 현재 스크립트와 같은 위치에 있다고 가정합니다.
 # 만약 다른 경로라면 "data" 부분을 적절히 수정해야 합니다.
-data_directory = "data"
+base_dir = os.path.dirname(__file__)
+data_directory = os.path.join(base_dir, "data")
+
 
 print(f"Reading CSV files from: {os.path.abspath(data_directory)}")
 
