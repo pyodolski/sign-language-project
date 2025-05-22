@@ -44,50 +44,55 @@ mp_draw = mp.solutions.drawing_utils
 recognized_string = {"asl": "", "ksl": ""}
 latest_char = {"asl": "", "ksl": ""}
 
-
 # ==== 영상 스트리밍 ====
 def generate_frames(model, labels, lang_key):
     cap = cv2.VideoCapture(0)
-
     if not cap.isOpened():
         print("❌ 카메라 열기 실패")
         return
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
 
-        image = cv2.flip(frame, 1)
-        rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        result = hands.process(rgb_image)
+            image = cv2.flip(frame, 1)
+            rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            result = hands.process(rgb_image)
 
-        if result.multi_hand_landmarks:
-            for hand_landmarks in result.multi_hand_landmarks:
-                mp_draw.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-                coords = [v for lm in hand_landmarks.landmark for v in (lm.x, lm.y)]
+            if result.multi_hand_landmarks:
+                for hand_landmarks in result.multi_hand_landmarks:
+                    mp_draw.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                    coords = [v for lm in hand_landmarks.landmark for v in (lm.x, lm.y)]
 
-                if len(coords) == model.input_shape[1]:
-                    coords_array = np.array(coords).reshape(1, -1)
-                    prediction = model.predict(coords_array)
-                    idx = np.argmax(prediction)
+                    if len(coords) == model.input_shape[1]:
+                        coords_array = np.array(coords).reshape(1, -1)
+                        prediction = model.predict(coords_array)
+                        idx = np.argmax(prediction)
 
-                    if 0 <= idx < len(labels):
-                        latest_char[lang_key] = labels[idx]
+                        if 0 <= idx < len(labels):
+                            latest_char[lang_key] = labels[idx]
+                        else:
+                            latest_char[lang_key] = "ERR:IDX"
                     else:
-                        latest_char[lang_key] = "ERR:IDX"
-                else:
-                    latest_char[lang_key] = "ERR:DIM"
+                        latest_char[lang_key] = "ERR:DIM"
 
-        display_text = f"현재: {latest_char[lang_key]} | 누적: {recognized_string[lang_key]}"
-        cv2.putText(image, display_text, (20, 40),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            display_text = f"현재: {latest_char[lang_key]} | 누적: {recognized_string[lang_key]}"
+            cv2.putText(image, display_text, (20, 40),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-        ret, buffer = cv2.imencode('.jpg', image)
-        frame = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            ret, buffer = cv2.imencode('.jpg', image)
+            frame = buffer.tobytes()
 
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+    except GeneratorExit:
+        print("🛑 스트리밍 중단 감지: 클라이언트 연결 종료됨")
+    finally:
+        cap.release()
+        print("✅ 카메라 자원 해제 완료")
 
 # ==== 라우팅 ====
 @app.route('/')
@@ -152,6 +157,19 @@ def translate(lang):
         en = ko = zh = ja = "(번역 오류)"
 
     return render_template('translate.html', ko=ko, en=en, zh=zh, ja=ja)
+
+# ==== 학습 ====
+@app.route('/edu/<lang>')
+def edu_page(lang):
+    # lang: 'asl' 또는 'ksl'
+    string = recognized_string.get(lang, "")
+    chars = list(string)
+
+    return render_template("edu.html", chars=chars, lang=lang)
+
+
+
+
 
 
 # ==== 실행 ====

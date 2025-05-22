@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>수어 학습 - {{ lang|upper }}</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f4f4;
+      padding: 2rem;
+      text-align: center;
+      margin: 0;
+    }
+
+    .top-bar {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
+    }
+
+    .back-button {
+      background-color: #3b82f6;
+      color: white;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .back-button:hover {
+      background-color: #2563eb;
+    }
+
+    h2 {
+      margin-top: 5rem;
+      margin-bottom: 1rem;
+    }
+
+    .btn-container {
+      margin-bottom: 2rem;
+    }
+
+    .char-btn {
+      padding: 0.6rem 1.2rem;
+      font-size: 1.2rem;
+      margin: 0.3rem;
+      border-radius: 0.5rem;
+      border: none;
+      cursor: pointer;
+      background-color: #3b82f6;
+      color: white;
+    }
+
+    .char-btn:hover {
+      background-color: #2563eb;
+    }
+
+    #imagePreview {
+      max-width: 300px;
+      margin-top: 1.5rem;
+      display: none;
+      border-radius: 1rem;
+      border: 2px solid #ddd;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ✅ 상단 돌아가기 버튼 -->
+  <div class="top-bar">
+    <a href="/{{ lang }}" class="back-button">← 돌아가기</a>
+  </div>
+
+  <h2>{{ lang|upper }} 수어 학습</h2>
+
+  <div class="btn-container">
+    {% for ch in chars %}
+      {% if ch.strip() %}
+        <button class="char-btn" onclick="showImage('{{ ch }}')">{{ ch }}</button>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <img id="imagePreview" src="" alt="수어 이미지 미리보기" />
+
+  <script>
+    function showImage(ch) {
+      const basePath = "/static/images";
+      const imageElement = document.getElementById("imagePreview");
+      imageElement.src = `${basePath}/${ch}.jpg?${Date.now()}`;
+      imageElement.style.display = "block";
+    }
+  </script>
+</body>
+</html>

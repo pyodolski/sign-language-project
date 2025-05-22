@@ -10,20 +10,42 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       min-height: 100vh;
     }
 
+    .top-bar {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
+    }
+
+    .back-button {
+      background-color: #3b82f6;
+      color: white;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+
+    .back-button:hover {
+      background-color: #2563eb;
+    }
+
     .container {
+      position: relative;
       background: white;
       padding: 2rem 3rem;
       border-radius: 1rem;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       text-align: center;
-      max-width: 800px;
+      max-width: 900px;
       width: 100%;
+      margin: 5rem auto 2rem;
     }
 
     h2 {
@@ -64,11 +86,24 @@
       margin-top: 1.5rem;
     }
 
-    img {
+    img.video {
       border-radius: 1rem;
       max-width: 100%;
       height: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    img#letterImage {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      width: 120px;
+      height: 120px;
+      border-radius: 0.75rem;
+      border: 2px solid #ccc;
+      box-shadow: 0 0 8px rgba(0,0,0,0.15);
+      object-fit: contain;
+      background: white;
     }
 
     .label {
@@ -83,8 +118,16 @@
   </style>
 </head>
 <body>
+
+  <!-- ✅ 돌아가기 버튼 -->
+  <div class="top-bar">
+    <a href="/" class="back-button">← 돌아가기</a>
+  </div>
+
   <div class="container">
     <h2>ASL 실시간 수어 인식</h2>
+
+    <img id="letterImage" src="" alt="관련 이미지" style="display: none;" />
 
     <button onclick="startCamera()" id="startBtn">📷 웹캠 실행</button>
     <button onclick="stopCamera()" id="stopBtn" class="stop-button" style="display: none;">🛑 웹캠 종료</button>
@@ -100,76 +143,98 @@
         <span class="label">누적된 문자열:</span>
         <span id="string">-</span>
       </div>
+
       <div class="output-line">
         <button onclick="addChar()">현재 글자 추가</button>
         <button onclick="removeChar()">최근 글자 삭제</button>
         <button onclick="clearString()">문자열 초기화</button>
         <button onclick="translateText()">🌐 번역하기</button>
+        <button onclick="goToEdu()">📘 학습하기</button>
       </div>
     </div>
   </div>
 
-<script>
-  let cameraStarted = false;
-  let intervalId;
-  let imgElement = null;
+  <script>
+    let cameraStarted = false;
+    let intervalId = null;
+    let imgElement = null;
 
-  function startCamera() {
-    if (!cameraStarted) {
-      const cameraArea = document.getElementById("cameraArea");
-      imgElement = document.createElement("img");
-      imgElement.src = "/video_feed_asl";  // ✅ 수정됨
-      imgElement.width = 640;
-      imgElement.height = 480;
-      cameraArea.appendChild(imgElement);
-      cameraStarted = true;
+    function startCamera() {
+      if (!cameraStarted) {
+        const cameraArea = document.getElementById("cameraArea");
+        imgElement = document.createElement("img");
+        imgElement.className = "video";
+        imgElement.src = "/video_feed_asl";
+        imgElement.width = 640;
+        imgElement.height = 480;
+        cameraArea.appendChild(imgElement);
+        cameraStarted = true;
 
-      document.getElementById("startBtn").style.display = "none";
-      document.getElementById("stopBtn").style.display = "inline-block";
+        document.getElementById("startBtn").style.display = "none";
+        document.getElementById("stopBtn").style.display = "inline-block";
 
-      intervalId = setInterval(update, 1000);
+        if (intervalId === null) {
+          intervalId = setInterval(update, 1000);
+        }
+      }
     }
-  }
 
-  function stopCamera() {
-    if (cameraStarted) {
-      const cameraArea = document.getElementById("cameraArea");
-      cameraArea.removeChild(imgElement);
-      imgElement = null;
-      cameraStarted = false;
+    function stopCamera() {
+      if (cameraStarted) {
+        const cameraArea = document.getElementById("cameraArea");
+        imgElement.src = "";
+        cameraArea.removeChild(imgElement);
+        imgElement = null;
+        cameraStarted = false;
 
-      document.getElementById("startBtn").style.display = "inline-block";
-      document.getElementById("stopBtn").style.display = "none";
+        document.getElementById("startBtn").style.display = "inline-block";
+        document.getElementById("stopBtn").style.display = "none";
 
-      clearInterval(intervalId);
+        if (intervalId !== null) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
     }
-  }
 
-  function update() {
-    fetch('/get_string/asl')  // ✅ 수정됨
-      .then(response => response.json())
-      .then(data => {
-        document.getElementById("current").innerText = data.current;
-        document.getElementById("string").innerText = data.string;
-      });
-  }
+    function update() {
+      fetch('/get_string/asl')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("current").innerText = data.current;
+          document.getElementById("string").innerText = data.string;
 
-  function addChar() {
-    fetch('/add_char/asl')  // ✅ 수정됨
-      .then(update);
-  }
+          const imageElement = document.getElementById("letterImage");
+          const currentChar = data.current;
 
-  function removeChar() {
-    fetch('/remove_char/asl')  // ✅ 수정됨
-      .then(update);
-  }
+          if (/^[a-zA-Z0-9]$/.test(currentChar)) {
+            imageElement.src = `/static/images/${currentChar.toLowerCase()}.jpg?${Date.now()}`;
+            imageElement.style.display = "block";
+          } else {
+            imageElement.style.display = "none";
+          }
+        });
+    }
 
-  function clearString() {
-    fetch('/clear_string/asl')  // ✅ 수정됨
-      .then(update);
-  }
+    function addChar() {
+      fetch('/add_char/asl').then(update);
+    }
 
-  function translateText() {
-    window.location.href = "/translate/asl";  // ✅ 수정됨
-  }
-</script>
+    function removeChar() {
+      fetch('/remove_char/asl').then(update);
+    }
+
+    function clearString() {
+      fetch('/clear_string/asl').then(update);
+    }
+
+    function translateText() {
+      window.location.href = "/translate/asl";
+    }
+
+    function goToEdu() {
+      window.location.href = "/edu/asl";
+    }
+  </script>
+</body>
+</html>
