@@ -10,14 +10,23 @@ app = Flask(__name__)
 
 # ==== 경로 설정 ====
 BASE_DIR = os.path.dirname(__file__)
-MODEL_PATH = os.path.join(BASE_DIR, "model", "asl_model.h5")
-LABELS_PATH = os.path.join(BASE_DIR, "model", "labels.npy")
+MODEL_DIR = os.path.join(BASE_DIR, "model")
+
+ASL_MODEL_PATH = os.path.join(MODEL_DIR, "asl_model.h5")
+ASL_LABELS_PATH = os.path.join(MODEL_DIR, "asl_labels.npy")
+
+KSL_MODEL_PATH = os.path.join(MODEL_DIR, "ksl_model.h5")
+KSL_LABELS_PATH = os.path.join(MODEL_DIR, "ksl_labels.npy")
 
 # ==== 모델 로딩 ====
 try:
-    model = load_model(MODEL_PATH)
-    labels = np.load(LABELS_PATH, allow_pickle=True)
-    print("✅ 모델 및 라벨 로딩 성공")
+    model_asl = load_model(ASL_MODEL_PATH)
+    labels_asl = np.load(ASL_LABELS_PATH, allow_pickle=True)
+
+    model_ksl = load_model(KSL_MODEL_PATH)
+    labels_ksl = np.load(KSL_LABELS_PATH, allow_pickle=True)
+
+    print("✅ ASL, KSL 모델 및 라벨 로딩 성공")
 except Exception as e:
     print(f"❌ 모델 로딩 실패: {e}")
     exit()
@@ -32,12 +41,12 @@ hands = mp_hands.Hands(
 mp_draw = mp.solutions.drawing_utils
 
 # ==== 인식 결과 저장 ====
-recognized_string = ""
-latest_char = ""
+recognized_string = {"asl": "", "ksl": ""}
+latest_char = {"asl": "", "ksl": ""}
+
 
 # ==== 영상 스트리밍 ====
-def generate_frames():
-    global recognized_string, latest_char
+def generate_frames(model, labels, lang_key):
     cap = cv2.VideoCapture(0)
 
     if not cap.isOpened():
@@ -64,14 +73,13 @@ def generate_frames():
                     idx = np.argmax(prediction)
 
                     if 0 <= idx < len(labels):
-                        latest_char = labels[idx]
+                        latest_char[lang_key] = labels[idx]
                     else:
-                        latest_char = "ERR:IDX"
+                        latest_char[lang_key] = "ERR:IDX"
                 else:
-                    latest_char = "ERR:DIM"
+                    latest_char[lang_key] = "ERR:DIM"
 
-        # 텍스트 출력
-        display_text = f"현재: {latest_char} | 누적: {recognized_string}"
+        display_text = f"현재: {latest_char[lang_key]} | 누적: {recognized_string[lang_key]}"
         cv2.putText(image, display_text, (20, 40),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
@@ -80,51 +88,61 @@ def generate_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+
 # ==== 라우팅 ====
 @app.route('/')
 def index():
-    return render_template('index.html')  # 메인 홈 화면
+    return render_template('index.html')
 
 @app.route('/asl')
 def asl_page():
-    return render_template('asl.html')  # ASL 인식 화면
+    return render_template('asl.html')
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(),
+@app.route('/ksl')
+def ksl_page():
+    return render_template('ksl.html')
+
+
+# ==== 영상 피드 ====
+@app.route('/video_feed_asl')
+def video_feed_asl():
+    return Response(generate_frames(model_asl, labels_asl, "asl"),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/get_string')
-def get_string():
-    return {'string': recognized_string, 'current': latest_char}
+@app.route('/video_feed_ksl')
+def video_feed_ksl():
+    return Response(generate_frames(model_ksl, labels_ksl, "ksl"),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/add_char')
-def add_char():
-    global recognized_string, latest_char
-    if latest_char and latest_char not in ["ERR:IDX", "ERR:DIM"]:
-        recognized_string += latest_char
+
+# ==== 텍스트 처리 ====
+@app.route('/get_string/<lang>')
+def get_string(lang):
+    return {'string': recognized_string[lang], 'current': latest_char[lang]}
+
+@app.route('/add_char/<lang>')
+def add_char(lang):
+    if latest_char[lang] and latest_char[lang] not in ["ERR:IDX", "ERR:DIM"]:
+        recognized_string[lang] += latest_char[lang]
     return jsonify({'success': True})
 
-@app.route('/remove_char')
-def remove_char():
-    global recognized_string
-    if recognized_string:
-        recognized_string = recognized_string[:-1]
+@app.route('/remove_char/<lang>')
+def remove_char(lang):
+    if recognized_string[lang]:
+        recognized_string[lang] = recognized_string[lang][:-1]
     return jsonify({'success': True})
 
-@app.route('/clear_string')
-def clear_string():
-    global recognized_string
-    recognized_string = ""
+@app.route('/clear_string/<lang>')
+def clear_string(lang):
+    recognized_string[lang] = ""
     return jsonify({'success': True})
 
-@app.route('/translate')
-def translate():
-    global recognized_string
-    original = recognized_string.strip() or "Hello"
 
+# ==== 번역 ====
+@app.route('/translate/<lang>')
+def translate(lang):
+    original = recognized_string[lang].strip() or "Hello"
     try:
-        # deep-translator 사용 (동기 처리)
         en = GoogleTranslator(source='auto', target='en').translate(original)
         ko = GoogleTranslator(source='auto', target='ko').translate(original)
         zh = GoogleTranslator(source='auto', target='zh-CN').translate(original)
@@ -134,6 +152,7 @@ def translate():
         en = ko = zh = ja = "(번역 오류)"
 
     return render_template('translate.html', ko=ko, en=en, zh=zh, ja=ja)
+
 
 # ==== 실행 ====
 if __name__ == '__main__':

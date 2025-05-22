@@ -2,76 +2,172 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KSL 수어 인식</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>KSL 실시간 수어 인식</title>
   <style>
     body {
+      background-color: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      background-color: #f0f4f8;
-      margin: 0;
-      font-family: sans-serif;
     }
+
     .container {
       background: white;
       padding: 2rem 3rem;
       border-radius: 1rem;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       text-align: center;
-      position: relative;
+      max-width: 800px;
+      width: 100%;
     }
-    .title {
-      font-size: 1.5rem;
-      font-weight: bold;
+
+    h2 {
       margin-bottom: 1rem;
+      font-size: 1.75rem;
     }
-    .button {
+
+    button {
+      background-color: #10b981;
+      color: white;
       padding: 0.75rem 1.5rem;
+      margin: 0.5rem;
       border: none;
       border-radius: 0.75rem;
-      background-color: #3b82f6;
-      color: white;
       font-weight: bold;
       font-size: 1rem;
       cursor: pointer;
       transition: background-color 0.3s;
     }
-    .button:hover {
-      background-color: #2563eb;
+
+    button:hover {
+      background-color: #059669;
     }
-    .home-button {
-      position: absolute;
-      top: -2.5rem;
-      right: 0;
-      font-size: 0.9rem;
-      text-decoration: none;
-      color: #3b82f6;
+
+    .stop-button {
+      background-color: #ef4444;
+    }
+
+    .stop-button:hover {
+      background-color: #dc2626;
+    }
+
+    .output-section {
+      margin-top: 1.5rem;
+    }
+
+    #cameraArea {
+      margin-top: 1.5rem;
+    }
+
+    img {
+      border-radius: 1rem;
+      max-width: 100%;
+      height: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .label {
       font-weight: bold;
-      background-color: white;
-      border: 2px solid #3b82f6;
-      padding: 0.4rem 0.8rem;
-      border-radius: 0.5rem;
-      transition: background-color 0.3s, color 0.3s;
+      margin-right: 0.5rem;
     }
-    .home-button:hover {
-      background-color: #3b82f6;
-      color: white;
+
+    .output-line {
+      margin-top: 0.75rem;
+      font-size: 1.1rem;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <a href="/" class="home-button">← 홈으로</a>
-    <div class="title">KSL 수어 인식</div>
-    <p>웹캠을 통해 수어를 인식합니다.</p>
-    <button class="button" onclick="startRecognition()">웹캠 인식 시작</button>
+    <h2>KSL 실시간 수어 인식</h2>
+
+    <button onclick="startCamera()" id="startBtn">📷 웹캠 실행</button>
+    <button onclick="stopCamera()" id="stopBtn" class="stop-button" style="display: none;">🛑 웹캠 종료</button>
+
+    <div id="cameraArea"></div>
+
+    <div class="output-section">
+      <div class="output-line">
+        <span class="label">현재 인식된 글자:</span>
+        <span id="current">-</span>
+      </div>
+      <div class="output-line">
+        <span class="label">누적된 문자열:</span>
+        <span id="string">-</span>
+      </div>
+      <div class="output-line">
+        <button onclick="addChar()">현재 글자 추가</button>
+        <button onclick="removeChar()">최근 글자 삭제</button>
+        <button onclick="clearString()">문자열 초기화</button>
+        <button onclick="translateText()">🌐 번역하기</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    function startRecognition() {
-      alert("웹캠 인식 기능은 아직 구현되지 않았습니다.");
+    let cameraStarted = false;
+    let intervalId;
+    let imgElement = null;
+
+    function startCamera() {
+      if (!cameraStarted) {
+        const cameraArea = document.getElementById("cameraArea");
+        imgElement = document.createElement("img");
+        imgElement.src = "/video_feed_ksl";  // KSL용 스트리밍
+        imgElement.width = 640;
+        imgElement.height = 480;
+        cameraArea.appendChild(imgElement);
+        cameraStarted = true;
+
+        document.getElementById("startBtn").style.display = "none";
+        document.getElementById("stopBtn").style.display = "inline-block";
+
+        intervalId = setInterval(update, 1000);
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStarted) {
+        const cameraArea = document.getElementById("cameraArea");
+        cameraArea.removeChild(imgElement);
+        imgElement = null;
+        cameraStarted = false;
+
+        document.getElementById("startBtn").style.display = "inline-block";
+        document.getElementById("stopBtn").style.display = "none";
+
+        clearInterval(intervalId);
+      }
+    }
+
+    function update() {
+      fetch('/get_string/ksl')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("current").innerText = data.current;
+          document.getElementById("string").innerText = data.string;
+        });
+    }
+
+    function addChar() {
+      fetch('/add_char/ksl').then(update);
+    }
+
+    function removeChar() {
+      fetch('/remove_char/ksl').then(update);
+    }
+
+    function clearString() {
+      fetch('/clear_string/ksl').then(update);
+    }
+
+    function translateText() {
+      window.location.href = "/translate/ksl";
     }
   </script>
 </body>
