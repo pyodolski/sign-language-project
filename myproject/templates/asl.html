@@ -109,66 +109,67 @@
     </div>
   </div>
 
-  <script>
-    let cameraStarted = false;
-    let intervalId;
-    let imgElement = null;
+<script>
+  let cameraStarted = false;
+  let intervalId;
+  let imgElement = null;
 
-    function startCamera() {
-      if (!cameraStarted) {
-        const cameraArea = document.getElementById("cameraArea");
-        imgElement = document.createElement("img");
-        imgElement.src = "/video_feed";
-        imgElement.width = 640;
-        imgElement.height = 480;
-        cameraArea.appendChild(imgElement);
-        cameraStarted = true;
+  function startCamera() {
+    if (!cameraStarted) {
+      const cameraArea = document.getElementById("cameraArea");
+      imgElement = document.createElement("img");
+      imgElement.src = "/video_feed_asl";  // ✅ 수정됨
+      imgElement.width = 640;
+      imgElement.height = 480;
+      cameraArea.appendChild(imgElement);
+      cameraStarted = true;
 
-        document.getElementById("startBtn").style.display = "none";
-        document.getElementById("stopBtn").style.display = "inline-block";
+      document.getElementById("startBtn").style.display = "none";
+      document.getElementById("stopBtn").style.display = "inline-block";
 
-        intervalId = setInterval(update, 1000);
-      }
+      intervalId = setInterval(update, 1000);
     }
+  }
 
-    function stopCamera() {
-      if (cameraStarted) {
-        const cameraArea = document.getElementById("cameraArea");
-        cameraArea.removeChild(imgElement);
-        imgElement = null;
-        cameraStarted = false;
+  function stopCamera() {
+    if (cameraStarted) {
+      const cameraArea = document.getElementById("cameraArea");
+      cameraArea.removeChild(imgElement);
+      imgElement = null;
+      cameraStarted = false;
 
-        document.getElementById("startBtn").style.display = "inline-block";
-        document.getElementById("stopBtn").style.display = "none";
+      document.getElementById("startBtn").style.display = "inline-block";
+      document.getElementById("stopBtn").style.display = "none";
 
-        clearInterval(intervalId);
-      }
+      clearInterval(intervalId);
     }
+  }
 
-    function update() {
-      fetch('/get_string')
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById("current").innerText = data.current;
-          document.getElementById("string").innerText = data.string;
-        });
-    }
+  function update() {
+    fetch('/get_string/asl')  // ✅ 수정됨
+      .then(response => response.json())
+      .then(data => {
+        document.getElementById("current").innerText = data.current;
+        document.getElementById("string").innerText = data.string;
+      });
+  }
 
-    function addChar() {
-      fetch('/add_char').then(update);
-    }
+  function addChar() {
+    fetch('/add_char/asl')  // ✅ 수정됨
+      .then(update);
+  }
 
-    function removeChar() {
-      fetch('/remove_char').then(update);
-    }
+  function removeChar() {
+    fetch('/remove_char/asl')  // ✅ 수정됨
+      .then(update);
+  }
 
-    function clearString() {
-      fetch('/clear_string').then(update);
-    }
+  function clearString() {
+    fetch('/clear_string/asl')  // ✅ 수정됨
+      .then(update);
+  }
 
-    function translateText() {
-      window.location.href = "/translate";
-    }
-  </script>
-</body>
-</html>
+  function translateText() {
+    window.location.href = "/translate/asl";  // ✅ 수정됨
+  }
+</script>
