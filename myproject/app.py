@@ -63,7 +63,15 @@ def generate_frames(interpreter, input_details, output_details, labels, lang_key
         return
 
     last_prediction_time = 0
-    prediction_interval = 5  # seconds
+    prediction_interval = 2  # seconds
+    stable_threshold = 1     # ✅ 1로 설정 → 한 번만 맞아도 적용
+    prev_idx = -1
+    stable_count = 0
+
+    active_duration = 2    # 2초간 활성화
+    inactive_duration = 2  # 2초간 비활성화
+    process_active = True
+    last_switch_time = time.time()
 
     try:
         while True:
@@ -76,28 +84,43 @@ def generate_frames(interpreter, input_details, output_details, labels, lang_key
 
             image = cv2.flip(frame, 1)
             rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            result = hands.process(rgb_image)
 
             current_time = time.time()
 
-            if result.multi_hand_landmarks:
-                for hand_landmarks in result.multi_hand_landmarks:
-                    mp_draw.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-                    coords = [v for lm in hand_landmarks.landmark for v in (lm.x, lm.y)]
+            # === 상태 전환 ===
+            if process_active and current_time - last_switch_time >= active_duration:
+                process_active = False
+                last_switch_time = current_time
+                print("🛑 Mediapipe 비활성화 (2초 휴식)")
+            elif not process_active and current_time - last_switch_time >= inactive_duration:
+                process_active = True
+                last_switch_time = current_time
+                print("✅ Mediapipe 활성화 (2초 실행)")
 
-                    if current_time - last_prediction_time >= prediction_interval:
-                        input_data = np.array(coords, dtype=np.float32).reshape(1, -1)
-                        interpreter.set_tensor(input_details[0]['index'], input_data)
-                        interpreter.invoke()
-                        prediction = interpreter.get_tensor(output_details[0]['index'])
-                        idx = np.argmax(prediction)
+            # === Mediapipe 처리 ===
+            if process_active:
+                result = hands.process(rgb_image)
 
-                        if 0 <= idx < len(labels):
-                            latest_char[lang_key] = labels[idx]
-                        else:
-                            latest_char[lang_key] = "ERR:IDX"
+                if result.multi_hand_landmarks:
+                    for hand_landmarks in result.multi_hand_landmarks:
+                        mp_draw.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-                        last_prediction_time = current_time
+                        if current_time - last_prediction_time >= prediction_interval:
+                            coords = [v for lm in hand_landmarks.landmark for v in (lm.x, lm.y)]
+                            input_data = np.array(coords, dtype=np.float32).reshape(1, -1)
+                            interpreter.set_tensor(input_details[0]['index'], input_data)
+                            interpreter.invoke()
+                            prediction = interpreter.get_tensor(output_details[0]['index'])
+                            idx = np.argmax(prediction)
+
+                            # ✅ 한 번만 나와도 적용
+                            if 0 <= idx < len(labels):
+                                latest_char[lang_key] = labels[idx]
+                            else:
+                                latest_char[lang_key] = "ERR:IDX"
+
+                            prev_idx = idx
+                            last_prediction_time = current_time
 
             display_text = f"현재: {latest_char[lang_key]} | 누적: {recognized_string[lang_key]}"
             cv2.putText(image, display_text, (20, 40),
@@ -181,3 +204,4 @@ def edu_page(lang):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5002)
+

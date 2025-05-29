@@ -163,8 +163,8 @@
         imgElement = document.createElement("img");
         imgElement.className = "video";
         imgElement.src = "/video_feed_ksl";
-        imgElement.width = 640;
-        imgElement.height = 480;
+        imgElement.width = 480;
+        imgElement.height = 320;
         cameraArea.appendChild(imgElement);
         cameraStarted = true;
 
@@ -173,7 +173,7 @@
 
         // ✅ 캠 켰을 때만 1초마다 업데이트
         if (intervalId === null) {
-          intervalId = setInterval(update, 10000);
+          intervalId = setInterval(update, 2000);
         }
       }
     }

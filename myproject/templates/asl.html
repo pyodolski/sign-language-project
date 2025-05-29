@@ -149,8 +149,8 @@
         imgElement = document.createElement("img");
         imgElement.className = "video";
         imgElement.src = "/video_feed_asl";
-        imgElement.width = 640;
-        imgElement.height = 480;
+        imgElement.width = 480;
+        imgElement.height = 320;
         cameraArea.appendChild(imgElement);
         cameraStarted = true;
 
@@ -158,7 +158,7 @@
         document.getElementById("stopBtn").style.display = "inline-block";
 
         // 주기적 업데이트 시작 (1초마다)
-        intervalId = setInterval(update, 10000);
+        intervalId = setInterval(update, 2000);
       }
     }
 
