@@ -6,6 +6,8 @@ import time
 import tensorflow as tf
 import os
 from deep_translator import GoogleTranslator
+from jamo import combine_hangul_jamo  # 한글 조합 함수 import
+
 
 app = Flask(__name__)
 
@@ -163,7 +165,10 @@ def video_feed_ksl():
 
 @app.route('/get_string/<lang>')
 def get_string(lang):
-    return {'string': recognized_string[lang], 'current': latest_char[lang]}
+    # recognized_string[lang]에는 자모가 누적되어 있음
+    hangul_sentence = combine_hangul_jamo(list(recognized_string[lang]))
+    return {'string': hangul_sentence, 'current': latest_char[lang]}
+
 
 @app.route('/add_char/<lang>')
 def add_char(lang):
@@ -184,7 +189,8 @@ def clear_string(lang):
 
 @app.route('/translate/<lang>')
 def translate(lang):
-    original = recognized_string[lang].strip() or "Hello"
+    # recognized_string[lang]에는 자모가 누적되어 있으므로 합쳐서 번역기로 넘긴다!
+    original = combine_hangul_jamo(list(recognized_string[lang].strip())) or "Hello"
     try:
         en = GoogleTranslator(source='auto', target='en').translate(original)
         ko = GoogleTranslator(source='auto', target='ko').translate(original)
@@ -194,7 +200,7 @@ def translate(lang):
         print("❌ 번역 실패:", e)
         en = ko = zh = ja = "(번역 오류)"
 
-    return render_template('translate.html', ko=ko, en=en, zh=zh, ja=ja)
+    return render_template('translate.html', ko=ko, en=en, zh=zh, ja=ja, current_mode=lang)
 
 @app.route('/edu/<lang>')
 def edu_page(lang):
@@ -204,4 +210,3 @@ def edu_page(lang):
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5002)
-
