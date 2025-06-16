@@ -6,6 +6,9 @@ import time
 import tensorflow as tf
 import os
 from deep_translator import GoogleTranslator
+from gtts import gTTS
+import subprocess
+from jamo import combine_hangul_jamo
 
 app = Flask(__name__)
 
@@ -64,14 +67,11 @@ def generate_frames(interpreter, input_details, output_details, labels, lang_key
 
     last_prediction_time = 0
     prediction_interval = 2  # seconds
-    stable_threshold = 1     # ✅ 1로 설정 → 한 번만 맞아도 적용
     prev_idx = -1
-    stable_count = 0
-
-    active_duration = 2    # 2초간 활성화
-    inactive_duration = 2  # 2초간 비활성화
     process_active = True
     last_switch_time = time.time()
+    active_duration = 2
+    inactive_duration = 2
 
     try:
         while True:
@@ -84,10 +84,8 @@ def generate_frames(interpreter, input_details, output_details, labels, lang_key
 
             image = cv2.flip(frame, 1)
             rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
             current_time = time.time()
 
-            # === 상태 전환 ===
             if process_active and current_time - last_switch_time >= active_duration:
                 process_active = False
                 last_switch_time = current_time
@@ -97,7 +95,6 @@ def generate_frames(interpreter, input_details, output_details, labels, lang_key
                 last_switch_time = current_time
                 print("✅ Mediapipe 활성화 (2초 실행)")
 
-            # === Mediapipe 처리 ===
             if process_active:
                 result = hands.process(rgb_image)
 
@@ -113,7 +110,6 @@ def generate_frames(interpreter, input_details, output_details, labels, lang_key
                             prediction = interpreter.get_tensor(output_details[0]['index'])
                             idx = np.argmax(prediction)
 
-                            # ✅ 한 번만 나와도 적용
                             if 0 <= idx < len(labels):
                                 latest_char[lang_key] = labels[idx]
                             else:
@@ -184,7 +180,7 @@ def clear_string(lang):
 
 @app.route('/translate/<lang>')
 def translate(lang):
-    original = recognized_string[lang].strip() or "Hello"
+    original = combine_hangul_jamo(list(recognized_string[lang].strip())) or "Hello"
     try:
         en = GoogleTranslator(source='auto', target='en').translate(original)
         ko = GoogleTranslator(source='auto', target='ko').translate(original)
@@ -194,13 +190,55 @@ def translate(lang):
         print("❌ 번역 실패:", e)
         en = ko = zh = ja = "(번역 오류)"
 
-    return render_template('translate.html', ko=ko, en=en, zh=zh, ja=ja)
+    # 뒤로가기 주소 결정
+    prev_url = f"/{lang}" if lang in ["asl", "ksl"] else "/"
+
+    return render_template('translate.html', ko=ko, en=en, zh=zh, ja=ja, prev_url=prev_url)
+
 
 @app.route('/edu/<lang>')
 def edu_page(lang):
     string = recognized_string.get(lang, "")
     chars = list(string)
     return render_template("edu.html", chars=chars, lang=lang)
+
+# ==== TTS 음성 출력 ====
+@app.route('/speak/<lang_code>')
+def speak(lang_code):
+    try:
+        # 조합된 한글 문자열 만들기 (자모 → 완성형)
+        raw = recognized_string["asl"] or recognized_string["ksl"]
+        original_text = combine_hangul_jamo(list(raw.strip())) if raw else ""
+
+        if not original_text:
+            return jsonify({'success': False, 'msg': '인식된 문자열이 없습니다.'})
+
+        # 번역 결과 사용 (정확한 발음을 위해)
+        text_map = {
+            "ko": original_text,
+            "en": GoogleTranslator(source='ko', target='en').translate(original_text),
+            "zh": GoogleTranslator(source='ko', target='zh-CN').translate(original_text),
+            "ja": GoogleTranslator(source='ko', target='ja').translate(original_text),
+        }
+
+        text = text_map.get(lang_code, "")
+        if not text:
+            return jsonify({'success': False, 'msg': '해당 언어 코드가 유효하지 않습니다.'})
+
+        tts = gTTS(text=text, lang=lang_code)
+        mp3_path = os.path.join(BASE_DIR, "temp.mp3")
+        wav_path = os.path.join(BASE_DIR, "temp.wav")
+        tts.save(mp3_path)
+
+        subprocess.run(["ffmpeg", "-y", "-i", mp3_path, wav_path],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.run(["aplay", wav_path],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"❌ 음성 출력 실패: {e}")
+        return jsonify({'success': False, 'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5002)

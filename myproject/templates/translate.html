@@ -1,4 +1,3 @@
-<!-- templates/translate.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -29,17 +28,27 @@
 
     h2 {
       font-size: 1.5rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .lang {
-      margin: 1rem 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
       font-size: 1.1rem;
+      flex-wrap: wrap;
     }
 
     .label {
       font-weight: bold;
       margin-right: 0.5rem;
+    }
+
+    .lang span {
+      margin: 0 0.5rem;
+      word-break: break-word;
+      max-width: 70%;
     }
 
     .tts-button {
@@ -58,9 +67,14 @@
     }
 
     button.back {
-      margin-top: 1.5rem;
+      margin-top: 2rem;
       background-color: #3b82f6;
       padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 0.5rem;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
     }
 
     button.back:hover {
@@ -75,45 +89,42 @@
     <div class="lang">
       <span class="label">한국어:</span>
       <span id="ko">{{ ko }}</span>
-      <button class="tts-button" onclick="speak('ko')">▶</button>
+      <button class="tts-button" onclick="speakServer('ko')">▶</button>
     </div>
 
     <div class="lang">
       <span class="label">영어:</span>
       <span id="en">{{ en }}</span>
-      <button class="tts-button" onclick="speak('en')">▶</button>
+      <button class="tts-button" onclick="speakServer('en')">▶</button>
     </div>
 
     <div class="lang">
       <span class="label">중국어:</span>
       <span id="zh">{{ zh }}</span>
-      <button class="tts-button" onclick="speak('zh')">▶</button>
+      <button class="tts-button" onclick="speakServer('zh')">▶</button>
     </div>
 
     <div class="lang">
       <span class="label">일본어:</span>
       <span id="ja">{{ ja }}</span>
-      <button class="tts-button" onclick="speak('ja')">▶</button>
+      <button class="tts-button" onclick="speakServer('ja')">▶</button>
     </div>
 
-    <button class="back" onclick="location.href='/asl'">← 돌아가기</button>
+    <button class="back" onclick="location.href='{{ prev_url }}'">← 돌아가기</button>
   </div>
 
   <script>
-    function speak(langCode) {
-      const text = document.getElementById(langCode).innerText;
-      const utter = new SpeechSynthesisUtterance(text);
-
-      // 언어 코드에 맞춰 음성 설정
-      const langMap = {
-        ko: "ko-KR",
-        en: "en-US",
-        zh: "zh-CN",
-        ja: "ja-JP"
-      };
-
-      utter.lang = langMap[langCode];
-      speechSynthesis.speak(utter);
+    function speakServer(langCode) {
+      fetch(`/speak/${langCode}`)
+        .then(response => response.json())
+        .then(data => {
+          if (!data.success) {
+            alert("❌ 음성 출력 실패: " + (data.msg || data.error));
+          }
+        })
+        .catch(error => {
+          alert("❌ 서버 통신 오류: " + error);
+        });
     }
   </script>
 </body>

@@ -14,10 +14,10 @@ X, y = [], []
 base_dir = os.path.dirname(__file__)
 data_directory = os.path.join(base_dir, "data")
 
-print(f"CSV 파일을 읽는 경로: {os.path.abspath(data_directory)}")
+print(f"Reading CSV files from: {os.path.abspath(data_directory)}")
 
 if not os.path.isdir(data_directory):
-    print(f"오류: '{data_directory}' 디렉토리를 찾을 수 없습니다.")
+    print(f"Error: Directory '{data_directory}' not found.")
     exit()
 
 csv_files_found = False
@@ -25,25 +25,25 @@ for file in os.listdir(data_directory):
     if file.endswith(".csv"):
         csv_files_found = True
         file_path = os.path.join(data_directory, file)
-        print(f"파일 처리 중: {file_path}")
+        print(f"Processing file: {file_path}")
         try:
             df = pd.read_csv(file_path, header=None, encoding='utf-8')
             if df.shape[1] > 1:
                 X.extend(df.iloc[:, :-1].values.tolist())
                 y.extend(df.iloc[:, -1].values.tolist())
-                print(f"  {file}의 라벨 샘플: {df.iloc[:3, -1].unique()}")
+                print(f"  Labels sample from {file}: {df.iloc[:3, -1].unique()}")
             else:
-                print(f"  경고: {file} 파일은 하나의 열만 가지고 있습니다. 건너뜁니다.")
+                print(f"  Warning: {file} has only one column. Skipping.")
         except Exception as e:
-            print(f"파일 {file_path} 읽기 오류: {e}")
+            print(f"Error reading {file_path}: {e}")
             continue
 
 if not csv_files_found or not X or not y:
-    print("사용 가능한 데이터를 찾을 수 없습니다. 종료합니다.")
+    print("No usable data found. Exiting.")
     exit()
 
-print(f"\n로드된 총 샘플 수: {len(X)}")
-print(f"인코딩 전 고유 라벨: {np.unique(y)}")
+print(f"\nTotal samples loaded: {len(X)}")
+print(f"Unique labels before encoding: {np.unique(y)}")
 
 X = np.array(X, dtype=np.float32)
 le = LabelEncoder()
@@ -51,15 +51,15 @@ y_encoded = le.fit_transform(y)
 y_cat = to_categorical(y_encoded)
 
 labels_original_order = le.classes_
-print(f"라벨 클래스: {labels_original_order}")
-print(f"클래스 수: {len(labels_original_order)}")
+print(f"Label classes: {labels_original_order}")
+print(f"Number of classes: {len(labels_original_order)}")
 
 if len(X) > 1:
     X_train, X_val, y_train_cat, y_val_cat = train_test_split(
         X, y_cat, test_size=0.2, stratify=y_cat, random_state=42
     )
-    print(f"\n훈련셋 크기: {X_train.shape[0]}")
-    print(f"검증셋 크기: {X_val.shape[0]}")
+    print(f"\nTraining set size: {X_train.shape[0]}")
+    print(f"Validation set size: {X_val.shape[0]}")
 else:
     X_train, y_train_cat = X, y_cat
     X_val, y_val_cat = None, None
